@@ -60,6 +60,7 @@
           var toggleAll = document.querySelector(".toggle-all");
           var items = JSON.parse(localStorage.getItem("items")) || [];
           var itemsLeft = document.querySelector(".todo-count");
+          var clearCompleted = document.querySelector(".clear-completed");
 
           function handleEnter() {
             var item = addItems.value.trim();
@@ -82,7 +83,9 @@
                 return `
                       <li data-id=${i} class=${plate.completed ? "completed" : ""}>
                         <div class="view">
-                          <input class="toggle" type="checkbox" />
+                          <input class="toggle" type="checkbox" ${
+                            plate.completed ? "checked" : ""
+                          }/>
                           <label>${plate.content}</label>
                           <button class="destroy"></button>
                         </div>
@@ -92,12 +95,6 @@
               .join("");
           }
 
-          addItems.addEventListener("keydown", (e) => {
-            if (e.keyCode === 13) {
-              handleEnter();
-            }
-          });
-
           function updateItemsLeft() {
             var itemsLeftNum = items.filter(function (item) {
               return !item.completed;
@@ -106,10 +103,104 @@
               itemsLeft.innerHTML = `<strong>${itemsLeftNum}</strong> ${
                 itemsLeftNum > 1 ? "items" : "item"
               } left`;
+            } else {
+              itemsLeft.innerHTML = "";
             }
           }
-        }
 
+          addItems.addEventListener("keydown", (e) => {
+            if (e.keyCode === 13) {
+              handleEnter();
+            }
+          });
+
+          todoList.addEventListener("click", (e) => {
+            if (e.target.matches("input")) {
+              var index = e.target.parentNode.parentNode.dataset.id;
+              items[index].completed = !items[index].completed;
+              localStorage.setItem("items", JSON.stringify(items));
+              e.target.parentNode.parentNode.classList.toggle("completed");
+              updateItemsLeft();
+            }
+          });
+
+          todoList.addEventListener("click", (e) => {
+            if (e.target.matches("button")) {
+              var index = e.target.parentNode.parentNode.dataset.id;
+              items.splice(index, 1);
+              localStorage.setItem("items", JSON.stringify(items));
+              updateItemsLeft();
+              updateList(items, todoList);
+            }
+          });
+
+          clearCompleted.addEventListener("click", () => {
+            items = items.filter(function (item) {
+              return !item.completed;
+            });
+            localStorage.setItem("items", JSON.stringify(items));
+            updateItemsLeft();
+            updateList(items, todoList);
+          });
+
+          todoList.addEventListener("dblclick", (e) => {
+            if (e.target.matches("label")) {
+              console.log("success 1");
+              var li = e.target.parentNode.parentNode;
+              var label = e.target;
+              var index = li.dataset.id;
+              var editInput = document.createElement("input");
+              li.classList.add("editing");
+              editInput.value = items[index].content;
+              editInput.classList.add("edit");
+              e.target.parentNode.parentNode.appendChild(editInput);
+              console.log(e.target.parentNode.parentNode.innerHTML);
+              editInput.focus();
+              editInput.addEventListener("blur", saveMessage);
+
+              editInput.addEventListener("keydown", (e) => {
+                if (e.keyCode === 13) {
+                  saveMessage(e);
+                }
+              });
+
+              function saveMessage(e) {
+                items[index].content = editInput.value;
+                localStorage.setItem("items", JSON.stringify(items));
+                label.innerHTML = editInput.value;
+                li.classList.remove("editing");
+                editInput.remove();
+              }
+            }
+          });
+
+          document.querySelectorAll(".filters a").forEach(function (link) {
+            link.addEventListener("click", (e) => {
+              e.preventDefault();
+              document.querySelectorAll(".filters a").forEach(function (link) {
+                link.classList.remove("selected");
+              });
+              link.classList.add("selected");
+
+              switch (link.getAttribute("href")) {
+                case "#/active":
+                  var activeItems = items.filter(function (item) {
+                    return !item.completed;
+                  });
+                  updateList(activeItems, todoList);
+                  break;
+                case "#/completed":
+                  var completedItems = items.filter(function (item) {
+                    return item.completed;
+                  });
+                  updateList(completedItems, todoList);
+                  break;
+                default:
+                  updateList(items, todoList);
+              }
+            });
+          });
+        }
         main();
       })();
     </script>
