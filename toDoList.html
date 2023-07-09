@@ -145,7 +145,6 @@
 
           todoList.addEventListener("dblclick", (e) => {
             if (e.target.matches("label")) {
-              console.log("success 1");
               var li = e.target.parentNode.parentNode;
               var label = e.target;
               var index = li.dataset.id;
@@ -172,6 +171,17 @@
                 editInput.remove();
               }
             }
+          });
+
+          toggleAll.addEventListener("click", () => {
+            var allCompleted = items.every((item) => item.completed);
+            items = items.map((item) => ({
+              ...item,
+              completed: !allCompleted,
+            }));
+            localStorage.setItem("items", JSON.stringify(items));
+            updateItemsLeft();
+            updateList(items, todoList);
           });
 
           document.querySelectorAll(".filters a").forEach(function (link) {
